@@ -4,6 +4,7 @@ import NavigationContainer from './containers/navigation_container';
 import ColumnLink from '../ui/components/column_link';
 import ColumnSubheading from '../ui/components/column_subheading';
 import PropTypes from 'prop-types';
+import ImmutablePropTypes from 'react-immutable-proptypes';
 import { connect } from 'react-redux';
 import { mountCompose, unmountCompose } from '../../actions/compose';
 import Link from 'react-router-dom/Link';
@@ -12,8 +13,11 @@ import SearchContainer from './containers/search_container';
 import Motion from 'react-motion/lib/Motion';
 import spring from 'react-motion/lib/spring';
 import SearchResultsContainer from './containers/search_results_container';
+import { changeComposing } from '../../actions/compose';
 
 const messages = defineMessages({
+  home_timeline: { id: 'tabs_bar.home', defaultMessage: 'Home' },
+  notifications: { id: 'tabs_bar.notifications', defaultMessage: 'Notifications' },
   preferences: { id: 'navigation_bar.preferences', defaultMessage: 'Preferences' },
   logout: { id: 'navigation_bar.logout', defaultMessage: 'Logout' },
   settings_subheading: { id: 'column_subheading.settings', defaultMessage: 'Settings' },
@@ -21,6 +25,7 @@ const messages = defineMessages({
 });
 
 const mapStateToProps = state => ({
+  columns: state.getIn(['settings', 'columns']),
   showSearch: state.getIn(['search', 'submitted']) && !state.getIn(['search', 'hidden']),
 });
 
@@ -30,6 +35,7 @@ export default class Compose extends React.PureComponent {
 
   static propTypes = {
     dispatch: PropTypes.func.isRequired,
+    columns: ImmutablePropTypes.list.isRequired,
     multiColumn: PropTypes.bool,
     showSearch: PropTypes.bool,
     intl: PropTypes.object.isRequired,
@@ -43,6 +49,14 @@ export default class Compose extends React.PureComponent {
     this.props.dispatch(unmountCompose());
   }
 
+  onFocus = () => {
+    this.props.dispatch(changeComposing(true));
+  }
+
+  onBlur = () => {
+    this.props.dispatch(changeComposing(false));
+  }
+
   render () {
     const { multiColumn, showSearch, intl } = this.props;
 
@@ -52,8 +66,8 @@ export default class Compose extends React.PureComponent {
         <SearchContainer />
 
         <div className='drawer__pager'>
-          <div className='drawer__inner'>
-            <NavigationContainer />
+          <div className='drawer__inner' onFocus={this.onFocus}>
+            <NavigationContainer onClose={this.onBlur} />
             <ComposeFormContainer />
             <ColumnSubheading text={intl.formatMessage(messages.settings_subheading)} />
             <ColumnLink icon='book' text={intl.formatMessage(messages.info)} href='/about/more' />
