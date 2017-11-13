@@ -3,7 +3,7 @@
 #
 # Table name: accounts
 #
-#  id                      :integer          not null, primary key
+#  id                      :bigint           not null, primary key
 #  username                :string           default(""), not null
 #  domain                  :string
 #  secret                  :string           default(""), not null
@@ -41,10 +41,11 @@
 #  shared_inbox_url        :string           default(""), not null
 #  followers_url           :string           default(""), not null
 #  protocol                :integer          default("ostatus"), not null
+#  memorial                :boolean          default(FALSE), not null
 #
 
 class Account < ApplicationRecord
-  MENTION_RE = /(?:^|[^\/[:word:]])@(([a-z0-9_]+)(?:@[a-z0-9\.\-]+[a-z0-9]+)?)/i
+  MENTION_RE = /(?<=^|[^\/[:word:]])@(([a-z0-9_]+)(?:@[a-z0-9\.\-]+[a-z0-9]+)?)/i
 
   include AccountAvatar
   include AccountFinderConcern
@@ -52,7 +53,6 @@ class Account < ApplicationRecord
   include AccountInteractions
   include Attachmentable
   include Remotable
-  include EmojiHelper
 
   enum protocol: [:ostatus, :activitypub]
 
@@ -90,6 +90,10 @@ class Account < ApplicationRecord
   # Report relationships
   has_many :reports
   has_many :targeted_reports, class_name: 'Report', foreign_key: :target_account_id
+
+  # Moderation notes
+  has_many :account_moderation_notes, dependent: :destroy
+  has_many :targeted_moderation_notes, class_name: 'AccountModerationNote', foreign_key: :target_account_id, dependent: :destroy
 
   scope :remote, -> { where.not(domain: nil) }
   scope :local, -> { where(domain: nil) }
@@ -138,6 +142,29 @@ class Account < ApplicationRecord
     subscription_expires_at.present?
   end
 
+  def possibly_stale?
+    last_webfingered_at.nil? || last_webfingered_at <= 1.day.ago
+  end
+
+  def refresh!
+    return if local?
+    ResolveRemoteAccountService.new.call(acct)
+  end
+
+  def unsuspend!
+    transaction do
+      user&.enable! if local?
+      update!(suspended: false)
+    end
+  end
+
+  def memorialize!
+    transaction do
+      user&.disable! if local?
+      update!(memorial: true)
+    end
+  end
+
   def keypair
     @keypair ||= OpenSSL::PKey::RSA.new(private_key || public_key)
   end
@@ -182,7 +209,8 @@ class Account < ApplicationRecord
     end
 
     def inboxes
-      reorder(nil).where(protocol: :activitypub).pluck("distinct coalesce(nullif(accounts.shared_inbox_url, ''), accounts.inbox_url)")
+      urls = reorder(nil).where(protocol: :activitypub).pluck("distinct coalesce(nullif(accounts.shared_inbox_url, ''), accounts.inbox_url)")
+      DeliveryFailureTracker.filter(urls)
     end
 
     def triadic_closures(account, limit: 5, offset: 0)
@@ -269,9 +297,6 @@ class Account < ApplicationRecord
   def prepare_contents
     display_name&.strip!
     note&.strip!
-
-    self.display_name = emojify(display_name)
-    self.note         = emojify(note)
   end
 
   def generate_keys

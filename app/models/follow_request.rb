@@ -3,11 +3,11 @@
 #
 # Table name: follow_requests
 #
-#  id                :integer          not null, primary key
-#  account_id        :integer          not null
-#  target_account_id :integer          not null
 #  created_at        :datetime         not null
 #  updated_at        :datetime         not null
+#  account_id        :bigint           not null
+#  id                :bigint           not null, primary key
+#  target_account_id :bigint           not null
 #
 
 class FollowRequest < ApplicationRecord
@@ -27,7 +27,5 @@ class FollowRequest < ApplicationRecord
     destroy!
   end
 
-  def reject!
-    destroy!
-  end
+  alias reject! destroy!
 end

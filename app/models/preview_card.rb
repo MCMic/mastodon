@@ -3,7 +3,7 @@
 #
 # Table name: preview_cards
 #
-#  id                 :integer          not null, primary key
+#  id                 :bigint           not null, primary key
 #  url                :string           default(""), not null
 #  title              :string           default(""), not null
 #  description        :string           default(""), not null
@@ -32,7 +32,7 @@ class PreviewCard < ApplicationRecord
 
   has_and_belongs_to_many :statuses
 
-  has_attached_file :image, styles: { original: '280x120>' }, convert_options: { all: '-quality 80 -strip' }
+  has_attached_file :image, styles: { original: '280x280>' }, convert_options: { all: '-quality 80 -strip' }
 
   include Attachmentable
   include Remotable

@@ -1,9 +1,15 @@
 # frozen_string_literal: true
 
 class FetchLinkCardService < BaseService
-  include ActionView::Helpers::TagHelper
-
-  URL_PATTERN = %r{https?://\S+}
+  URL_PATTERN = %r{
+    (                                                                                                 #   $1 URL
+      (https?:\/\/)                                                                                   #   $2 Protocol (required)
+      (#{Twitter::Regex[:valid_domain]})                                                              #   $3 Domain(s)
+      (?::(#{Twitter::Regex[:valid_port_number]}))?                                                   #   $4 Port number (optional)
+      (/#{Twitter::Regex[:valid_url_path]}*)?                                                         #   $5 URL Path and anchor
+      (\?#{Twitter::Regex[:valid_url_query_chars]}*#{Twitter::Regex[:valid_url_query_ending_chars]})? #   $6 Query String
+    )
+  }iox
 
   def call(status)
     @status = status
@@ -21,7 +27,8 @@ class FetchLinkCardService < BaseService
     end
 
     attach_card if @card&.persisted?
-  rescue HTTP::ConnectionError, OpenSSL::SSL::SSLError
+  rescue HTTP::Error, Addressable::URI::InvalidURIError => e
+    Rails.logger.debug "Error fetching link #{@url}: #{e}"
     nil
   end
 
@@ -42,7 +49,7 @@ class FetchLinkCardService < BaseService
 
   def parse_urls
     if @status.local?
-      urls = @status.text.match(URL_PATTERN).to_a.map { |uri| Addressable::URI.parse(uri).normalize }
+      urls = @status.text.scan(URL_PATTERN).map { |array| Addressable::URI.parse(array[0]).normalize }
     else
       html  = Nokogiri::HTML(@status.text)
       links = html.css('a')
@@ -64,6 +71,8 @@ class FetchLinkCardService < BaseService
 
   def attempt_oembed
     response = OEmbed::Providers.get(@url)
+
+    return false unless response.respond_to?(:type)
 
     @card.type          = response.type
     @card.title         = response.respond_to?(:title)         ? response.title         : ''
@@ -106,7 +115,7 @@ class FetchLinkCardService < BaseService
     detector.strip_tags = true
 
     guess = detector.detect(html, response.charset)
-    page  = Nokogiri::HTML(html, nil, guess&.fetch(:encoding))
+    page  = Nokogiri::HTML(html, nil, guess&.fetch(:encoding, nil))
 
     if meta_property(page, 'twitter:player')
       @card.type   = :video

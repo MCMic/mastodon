@@ -9,6 +9,10 @@ module JsonLdHelper
     value.is_a?(Array) ? value.first : value
   end
 
+  def as_array(value)
+    value.is_a?(Array) ? value : [value]
+  end
+
   def value_or_id(value)
     value.is_a?(String) || value.nil? ? value : value['id']
   end
@@ -22,7 +26,18 @@ module JsonLdHelper
     graph.dump(:normalize)
   end
 
-  def fetch_resource(uri)
+  def fetch_resource(uri, id)
+    unless id
+      json = fetch_resource_without_id_validation(uri)
+      return unless json
+      uri = json['id']
+    end
+
+    json = fetch_resource_without_id_validation(uri)
+    json.present? && json['id'] == uri ? json : nil
+  end
+
+  def fetch_resource_without_id_validation(uri)
     response = build_request(uri).perform
     return if response.code != 200
     body_to_json(response.to_s)

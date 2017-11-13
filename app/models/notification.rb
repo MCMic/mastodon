@@ -3,13 +3,13 @@
 #
 # Table name: notifications
 #
-#  id              :integer          not null, primary key
-#  account_id      :integer
-#  activity_id     :integer
+#  id              :bigint           not null, primary key
+#  account_id      :bigint
+#  activity_id     :bigint
 #  activity_type   :string
 #  created_at      :datetime         not null
 #  updated_at      :datetime         not null
-#  from_account_id :integer
+#  from_account_id :bigint
 #
 
 class Notification < ApplicationRecord
@@ -68,7 +68,10 @@ class Notification < ApplicationRecord
   class << self
     def reload_stale_associations!(cached_items)
       account_ids = cached_items.map(&:from_account_id).uniq
-      accounts    = Account.where(id: account_ids).map { |a| [a.id, a] }.to_h
+
+      return if account_ids.empty?
+
+      accounts = Account.where(id: account_ids).map { |a| [a.id, a] }.to_h
 
       cached_items.each do |item|
         item.from_account = accounts[item.from_account_id]

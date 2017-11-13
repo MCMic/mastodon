@@ -1,6 +1,7 @@
 ---
 en:
   about:
+    about_hashtag_html: These are public toots tagged with <strong>#%{hashtag}</strong>. You can interact with them if you have an account anywhere in the fediverse.
     about_mastodon_html: Mastodon is a social network based on open web protocols and free, open-source software. It is decentralized like e-mail.
     about_this: About
     closed_registrations: Registrations are currently closed on this instance. However! You can find a different instance to make an account on and get access to the very same network from there.
@@ -42,22 +43,35 @@ en:
     people_followed_by: People whom %{name} follows
     people_who_follow: People who follow %{name}
     posts: Toots
-    posts_with_replies: Toots with replies
+    posts_with_replies: Toots and replies
     remote_follow: Remote follow
     reserved_username: The username is reserved
     roles:
       admin: Admin
     unfollow: Unfollow
   admin:
+    account_moderation_notes:
+      account: Moderator
+      create: Create
+      created_at: Date
+      created_msg: Moderation note successfully created!
+      delete: Delete
+      destroyed_msg: Moderation note successfully destroyed!
     accounts:
       are_you_sure: Are you sure?
+      by_domain: Domain
       confirm: Confirm
       confirmed: Confirmed
+      demote: Demote
+      disable: Disable
       disable_two_factor_authentication: Disable 2FA
+      disabled: Disabled
       display_name: Display name
       domain: Domain
       edit: Edit
       email: E-mail
+      enable: Enable
+      enabled: Enabled
       feed_url: Feed URL
       followers: Followers
       followers_url: Followers URL
@@ -69,12 +83,15 @@ en:
         local: Local
         remote: Remote
         title: Location
+      login_status: Login status
       media_attachments: Media attachments
+      memorialize: Turn into memoriam
       moderation:
         all: All
         silenced: Silenced
         suspended: Suspended
         title: Moderation
+      moderation_notes: Moderation notes
       most_recent_activity: Most recent activity
       most_recent_ip: Most recent IP
       not_subscribed: Not subscribed
@@ -85,6 +102,7 @@ en:
       outbox_url: Outbox URL
       perform_full_suspension: Perform full suspension
       profile_url: Profile URL
+      promote: Promote
       protocol: Protocol
       public: Public
       push_subscription_expires: PuSH subscription expires
@@ -92,6 +110,11 @@ en:
       reset: Reset
       reset_password: Reset password
       resubscribe: Resubscribe
+      role: Permissions
+      roles:
+        admin: Administrator
+        moderator: Moderator
+        user: User
       salmon_url: Salmon URL
       search: Search
       shared_inbox_url: Shared Inbox URL
@@ -108,6 +131,30 @@ en:
       unsubscribe: Unsubscribe
       username: Username
       web: Web
+    custom_emojis:
+      copied_msg: Successfully created local copy of the emoji
+      copy: Copy
+      copy_failed_msg: Could not make a local copy of that emoji
+      created_msg: Emoji successfully created!
+      delete: Delete
+      destroyed_msg: Emojo successfully destroyed!
+      disable: Disable
+      disabled_msg: Successfully disabled that emoji
+      emoji: Emoji
+      enable: Enable
+      enabled_msg: Successfully enabled that emoji
+      image_hint: PNG up to 50KB
+      listed: Listed
+      new:
+        title: Add new custom emoji
+      overwrite: Overwrite
+      shortcode: Shortcode
+      shortcode_hint: At least 2 characters, only alphanumeric characters and underscores
+      title: Custom emojis
+      unlisted: Unlisted
+      update_failed_msg: Could not update that emoji
+      updated_msg: Emoji successfully updated!
+      upload: Upload
     domain_blocks:
       add_new: Add new
       created_msg: Domain block is now being processed
@@ -140,9 +187,21 @@ en:
         undo: Undo
       title: Domain Blocks
       undo: Undo
+    email_domain_blocks:
+      add_new: Add new
+      created_msg: Email domain block successfully created
+      delete: Delete
+      destroyed_msg: Email domain block successfully deleted
+      domain: Domain
+      new:
+        create: Create block
+        title: New email domain block
+      title: Email Domain Block
     instances:
       account_count: Known accounts
       domain_name: Domain
+      reset: Reset
+      search: Search
       title: Known Instances
     reports:
       action_taken_by: Action taken by
@@ -296,6 +355,9 @@ en:
       content: Security verification failed. Are you blocking cookies?
       title: Security verification failed
     '429': Throttled
+    '500':
+      content: We're sorry, but something went wrong on our end.
+      title: This page is not correct
     noscript_html: To use the Mastodon web application, please enable JavaScript. Alternatively, try one of the <a href="https://github.com/tootsuite/documentation/blob/master/Using-Mastodon/Apps.md">native apps</a> for Mastodon for your platform.
   exports:
     blocks: You block
@@ -330,6 +392,7 @@ en:
       following: Following list
       muting: Muting list
     upload: Upload
+  in_memoriam_html: In Memoriam.
   landing_strip_html: "<strong>%{name}</strong> is a user on %{link_to_root_path}. You can follow them or interact with them if you have an account anywhere in the fediverse."
   landing_strip_signup_html: If you don't, you can <a href="%{sign_up_path}">sign up here</a>.
   media_attachments:
@@ -376,6 +439,11 @@ en:
     next: Next
     prev: Prev
     truncate: "&hellip;"
+  preferences:
+    languages: Languages
+    other: Other
+    publishing: Publishing
+    web: Web
   push_notifications:
     favourite:
       title: "%{name} favourited your status"
@@ -443,6 +511,7 @@ en:
     export: Data export
     followers: Authorized followers
     import: Import
+    notifications: Notifications
     preferences: Preferences
     settings: Settings
     two_factor_authentication: Two-factor Authentication
@@ -538,6 +607,8 @@ en:
 
       <p>Originally adapted from the <a href="https://github.com/discourse/discourse">Discourse privacy policy</a>.</p>
     title: "%{instance} Terms of Service and Privacy Policy"
+  themes:
+    default: Mastodon
   time:
     formats:
       default: "%b %d, %Y, %H:%M"
