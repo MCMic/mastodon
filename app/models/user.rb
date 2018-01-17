@@ -3,7 +3,7 @@
 #
 # Table name: users
 #
-#  id                        :bigint           not null, primary key
+#  id                        :integer          not null, primary key
 #  email                     :string           default(""), not null
 #  created_at                :datetime         not null
 #  updated_at                :datetime         not null
@@ -30,9 +30,10 @@
 #  last_emailed_at           :datetime
 #  otp_backup_codes          :string           is an Array
 #  filtered_languages        :string           default([]), not null, is an Array
-#  account_id                :bigint           not null
+#  account_id                :integer          not null
 #  disabled                  :boolean          default(FALSE), not null
 #  moderator                 :boolean          default(FALSE), not null
+#  invite_id                 :integer
 #
 
 class User < ApplicationRecord
@@ -40,13 +41,17 @@ class User < ApplicationRecord
 
   ACTIVE_DURATION = 14.days
 
-  devise :registerable, :recoverable,
-         :rememberable, :trackable, :validatable, :confirmable,
-         :two_factor_authenticatable, :two_factor_backupable,
-         otp_secret_encryption_key: ENV['OTP_SECRET'],
+  devise :two_factor_authenticatable,
+         otp_secret_encryption_key: ENV['OTP_SECRET']
+
+  devise :two_factor_backupable,
          otp_number_of_backup_codes: 10
 
+  devise :registerable, :recoverable, :rememberable, :trackable, :validatable,
+         :confirmable
+
   belongs_to :account, inverse_of: :user, required: true
+  belongs_to :invite, counter_cache: :uses
   accepts_nested_attributes_for :account
 
   has_many :applications, class_name: 'Doorkeeper::Application', as: :owner
@@ -73,6 +78,12 @@ class User < ApplicationRecord
 
   has_many :session_activations, dependent: :destroy
 
+  delegate :auto_play_gif, :default_sensitive, :unfollow_modal, :boost_modal, :delete_modal,
+           :reduce_motion, :system_font_ui, :noindex, :theme,
+           to: :settings, prefix: :setting, allow_nil: false
+
+  attr_accessor :invite_code
+
   def confirmed?
     confirmed_at.present?
   end
@@ -91,6 +102,19 @@ class User < ApplicationRecord
     end
   end
 
+  def role?(role)
+    case role
+    when 'user'
+      true
+    when 'moderator'
+      staff?
+    when 'admin'
+      admin?
+    else
+      false
+    end
+  end
+
   def disable!
     update!(disabled: true,
             last_sign_in_at: current_sign_in_at,
@@ -101,9 +125,19 @@ class User < ApplicationRecord
     update!(disabled: false)
   end
 
+  def confirm
+    new_user = !confirmed?
+
+    super
+    update_statistics! if new_user
+  end
+
   def confirm!
+    new_user = !confirmed?
+
     skip_confirmation!
     save!
+    update_statistics! if new_user
   end
 
   def promote!
@@ -136,40 +170,8 @@ class User < ApplicationRecord
     settings.default_privacy || (account.locked? ? 'private' : 'public')
   end
 
-  def setting_default_sensitive
-    settings.default_sensitive
-  end
-
-  def setting_unfollow_modal
-    settings.unfollow_modal
-  end
-
-  def setting_boost_modal
-    settings.boost_modal
-  end
-
-  def setting_delete_modal
-    settings.delete_modal
-  end
-
-  def setting_auto_play_gif
-    settings.auto_play_gif
-  end
-
-  def setting_reduce_motion
-    settings.reduce_motion
-  end
-
-  def setting_system_font_ui
-    settings.system_font_ui
-  end
-
-  def setting_noindex
-    settings.noindex
-  end
-
-  def setting_theme
-    settings.theme
+  def allows_digest_emails?
+    settings.notification_emails['digest']
   end
 
   def token_for_app(a)
@@ -201,6 +203,11 @@ class User < ApplicationRecord
     session.web_push_subscription.nil? ? nil : session.web_push_subscription.as_payload
   end
 
+  def invite_code=(code)
+    self.invite  = Invite.find_by(code: code) unless code.blank?
+    @invite_code = code
+  end
+
   protected
 
   def send_devise_notification(notification, *args)
@@ -211,5 +218,10 @@ class User < ApplicationRecord
 
   def sanitize_languages
     filtered_languages.reject!(&:blank?)
+  end
+
+  def update_statistics!
+    BootstrapTimelineWorker.perform_async(account_id)
+    ActivityTracker.increment('activity:accounts:local')
   end
 end
