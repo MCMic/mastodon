@@ -125,7 +125,7 @@ export default class ColumnHeader extends React.PureComponent {
       }
 
       if (!columns.find(item => item.get('id') === 'COMMUNITY')) {
-        navItems.push(<NavLink className='tabs-bar__link secondary' activeClassName='active' to='/timelines/local'><i className='fa fa-fw fa-users' /></NavLink>);
+        navItems.push(<NavLink className='tabs-bar__link secondary' activeClassName='active' to='/timelines/public/local'><i className='fa fa-fw fa-users' /></NavLink>);
       }
 
       if (!columns.find(item => item.get('id') === 'PUBLIC')) {
